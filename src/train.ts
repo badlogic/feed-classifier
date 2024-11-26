@@ -12,7 +12,8 @@ async function fetchFeed(feedName: string) {
     const feed = (await resp.text())
         .split("\n")
         .filter((line) => line.trim().length != 0)
-        .map((line) => JSON.parse(line) as Post);
+        .map((line) => JSON.parse(line) as Post)
+        .filter((post) => !post.isReply && post.text.length > 150);
     return feed;
 }
 
@@ -63,7 +64,7 @@ async function createTrainingset() {
     console.log(`Fetched ${firehosePosts.length} firehose posts`);
 
     const combined = [...githubPosts, ...firehosePosts];
-    shuffle(combined);
+    // shuffle(combined);
     fs.writeFileSync("data/train.json", JSON.stringify(combined, null, 2));
 }
 
@@ -91,17 +92,25 @@ function prepareFastTextData(samples: Sample[], testSplit: number = 0.2) {
 
 function trainFastTextModel() {
     try {
+        if (!fs.existsSync("data/cc.en.300.vec")) {
+            console.log("Downloading pre-trained vectors...");
+            execSync(
+                "curl -o data/cc.en.300.vec.gz https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.vec.gz"
+            );
+            execSync("gunzip data/cc.en.300.vec.gz");
+        }
+
+        // Train with pre-trained vectors
         execSync(
             "fasttext supervised \
             -input data/train.txt \
             -output data/model \
-            -dim 100 \
-            -epoch 50 \
-            -lr 0.8 \
+            -pretrainedVectors data/cc.en.300.vec \
+            -dim 300 \
+            -epoch 25 \
+            -lr 0.5 \
             -wordNgrams 2 \
-            -minn 3 \
-            -maxn 6 \
-            -ws 10"
+            -loss softmax"
         );
 
         console.log("Model trained and saved to data/model.bin");

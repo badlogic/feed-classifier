@@ -1,15 +1,7 @@
 import { Jetstream } from "@skyware/jetstream";
 import { spawn } from "child_process";
 import * as readline from "readline";
-
-function cleanText(text: string): string {
-    return text
-        .replace(/https?:\/\/\S+/g, "")
-        .replace(/github\.com\/\S+/g, "")
-        .replace(/gist\.github\.com\/\S+/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-}
+import { cleanText } from "./data";
 
 class FastTextClassifier {
     private process;
@@ -63,7 +55,7 @@ async function main() {
 
     jetstream.onCreate("app.bsky.feed.post", async (event) => {
         const record = event.commit.record as any;
-        if (record.text && !record.text.includes("github.com")) {
+        if (record.text && !record.reply) {
             const post = {
                 author: event.did,
                 text: record.text,
@@ -73,13 +65,17 @@ async function main() {
                 isReply: record.reply != undefined,
             };
 
+            if (post.text.includes("#badbadbad")) {
+                console.log("bad");
+            }
+
             const startTime = process.hrtime();
             const cleanedText = cleanText(post.text);
             const prediction = await classifier.classify(cleanedText);
             const [seconds, nanoseconds] = process.hrtime(startTime);
             const classificationTime = seconds * 1000 + nanoseconds / 1000000;
 
-            if (prediction.label === "__label__programming" && prediction.confidence > 0.5) {
+            if (prediction.label == "__label__progamming" && prediction.confidence > 0.7) {
                 console.log({
                     created: post.createdAt,
                     author: post.author,
