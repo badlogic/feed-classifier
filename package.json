@@ -1,0 +1,23 @@
+{
+  "name": "feed-classifier",
+  "version": "1.0.0",
+  "description": "Playground for social media post classifiers",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build -- --watch",
+    "build": "node ./esbuild.mjs",
+    "clean": "rm -rf build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@skyware/jetstream": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.13",
+    "esbuild": "^0.17.19",
+    "typescript": "^5.0.0"
+  }
+}
